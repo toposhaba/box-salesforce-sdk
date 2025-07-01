@@ -42,6 +42,7 @@ public class BoxFile extends BoxItem {
     private static String FILE_INFO_URL = 'files/{0}';
     private static String GET_COMMENTS_URL = 'files/{0}/comments';
     private static String GET_VERSIONS_URL = 'files/{0}/versions';
+    private static String FILE_VERSIONS_URL = 'files/{0}/versions/{1}';
     private static String FILE_TRASH_URL = 'files/{0}/trash';
     private static string ADD_COMMENT_URL = 'comments';
     private static string EXPIRING_EMBED_LINK_URL = '/files/{0}?fields=expiring_embed_link';
@@ -314,7 +315,7 @@ public class BoxFile extends BoxItem {
     /**
      * Deletes this file, discards a file to the trash.
      *
-     * @param  eTag the etag of the file can be included as an ‘If-Match’ header to prevent race conditions.
+     * @param  eTag the etag of the file can be included as an 'If-Match' header to prevent race conditions.
      * @return      true if file is deleted succesfully, false otherwise.
      */
     public Boolean deleteFile(string eTag) {
@@ -455,6 +456,39 @@ public class BoxFile extends BoxItem {
             versions.add(new BoxFileVersion.Info(versionEntry));
         }
         return versions;
+    }
+
+    /**
+     * Gets a specific version of this file.
+     *
+     * @param versionId the ID of the version to retrieve
+     * @return information about the specific file version
+     */
+    public BoxFileVersion.Info getVersion(String versionId) {
+        String url =
+            this.api.baseUrl +
+            String.format(
+                FILE_VERSIONS_URL, 
+                new List<String>{ this.getId(), versionId }
+            );
+        BoxApiRequest request = new BoxApiRequest(
+            this.api,
+            url,
+            BoxApiRequest.METHOD_GET
+        );
+
+        request.setTimeout(this.api.timeout);
+        request.addJsonContentTypeHeader();
+
+        HttpResponse response = request.send();
+        String responseBody = BoxApiRequest.getBoxResourceResponseBody(
+            response,
+            'BoxFile.getVersion'
+        );
+
+        BoxFileVersion.Info versionInfo = new BoxFileVersion.Info(responseBody);
+        versionInfo.addValue('file_id', this.getId());
+        return versionInfo;
     }
 
     /**
