@@ -105,6 +105,81 @@ This document provides a comprehensive summary of all the features and capabilit
   - Support for all webhook trigger events
   - Enum for type-safe trigger selection
 
+### Phase 4: Box AI Implementation
+
+#### Box AI Features (BoxAI.cls)
+Implemented comprehensive AI capabilities for intelligent content processing:
+
+##### Core Methods:
+- **ask()** - Ask questions about files and folders
+- **generateText()** - Generate text based on content
+- **extract()** - Extract information using AI
+- **extractStructured()** - Extract structured data with defined fields
+
+##### Supporting Classes:
+- **Item** - Represents items for AI processing
+- **Response** - AI response with answer and metadata
+- **StructuredResponse** - Structured extraction results
+- **Agent** - AI agent configuration
+- **Config** - Model and parameter configuration
+- **ExtractField** - Field definitions for extraction
+- **DialogueEntry** - Conversation history
+
+##### Example Usage:
+```apex
+// Ask a question about a file
+BoxAI.Response response = BoxAI.ask(
+    api,
+    'What is the main topic of this document?',
+    new List<BoxAI.Item>{ new BoxAI.Item('file_id', 'file') },
+    'single_item_qa',
+    null
+);
+
+// Extract structured data
+List<BoxAI.ExtractField> fields = new List<BoxAI.ExtractField>{
+    new BoxAI.ExtractField('invoice_number')
+        .setType('string')
+        .setDescription('The invoice number')
+};
+
+BoxAI.StructuredResponse data = BoxAI.extractStructured(
+    api,
+    items,
+    fields,
+    null
+);
+```
+
+#### Box AI Utils (BoxAIUtils.cls)
+Helper utilities for AI operations:
+
+##### Helper Methods:
+- **createItemFromFile()** - Create AI item from BoxFile
+- **createDefaultQAAgent()** - Default question-answering agent
+- **createDefaultTextGenAgent()** - Default text generation agent
+- **createDefaultExtractionAgent()** - Default extraction agent
+- **createExtractionField()** - Create extraction fields
+- **askAboutFile()** - Simplified file question asking
+- **extractInvoiceData()** - Example invoice extraction
+
+##### Example Usage:
+```apex
+// Simple file question
+BoxAI.Response response = BoxAIUtils.askAboutFile(
+    api,
+    'file_12345',
+    'What are the key points?'
+);
+
+// Extract invoice data
+BoxAI.StructuredResponse invoice = BoxAIUtils.extractInvoiceData(
+    api,
+    'invoice_file_id'
+);
+String invoiceNumber = invoice.getStringValue('invoice_number');
+```
+
 ## Key Features by Category
 
 ### Versioning & Governance

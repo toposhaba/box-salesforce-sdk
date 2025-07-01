@@ -83,6 +83,13 @@ This document outlines the missing API features and capabilities in the Box for 
 #### 12. Search
 - **Advanced Search** (`/search`) - Currently missing advanced search capabilities
 
+### 6. Box AI ✅ IMPLEMENTED
+- [ ] ✅ AI ask (ask questions about files)
+- [ ] ✅ AI text generation
+- [ ] ✅ AI extract (extract information from files)
+- [ ] ✅ AI extract structured (with defined fields)
+- [ ] ✅ AI agent configuration support
+
 ## Implementation Priority
 
 ### Phase 1: Core Versioning Enhancements
