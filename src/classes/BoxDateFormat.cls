@@ -22,4 +22,8 @@ public class BoxDateFormat {
         }
         return dateTimeValue.format('yyyy-MM-dd\'T\'HH:mm:ssZ');
     }
+
+    public static String formatBoxDateTimeString(DateTime dateTimeValue) {
+        return getBoxDateTimeString(dateTimeValue);
+    }
 }

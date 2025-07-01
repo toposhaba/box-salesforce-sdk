@@ -42,9 +42,12 @@ public class BoxFile extends BoxItem {
     private static String FILE_INFO_URL = 'files/{0}';
     private static String GET_COMMENTS_URL = 'files/{0}/comments';
     private static String GET_VERSIONS_URL = 'files/{0}/versions';
+    private static String FILE_VERSIONS_URL = 'files/{0}/versions/{1}';
     private static String FILE_TRASH_URL = 'files/{0}/trash';
     private static string ADD_COMMENT_URL = 'comments';
     private static string EXPIRING_EMBED_LINK_URL = '/files/{0}?fields=expiring_embed_link';
+    private static String METADATA_URL = 'files/{0}/metadata';
+    private static String METADATA_INSTANCE_URL = 'files/{0}/metadata/{1}/{2}';
 
     /**
      * Constructs a BoxFile for a file with a given ID.
@@ -314,7 +317,7 @@ public class BoxFile extends BoxItem {
     /**
      * Deletes this file, discards a file to the trash.
      *
-     * @param  eTag the etag of the file can be included as an ‘If-Match’ header to prevent race conditions.
+     * @param  eTag the etag of the file can be included as an 'If-Match' header to prevent race conditions.
      * @return      true if file is deleted succesfully, false otherwise.
      */
     public Boolean deleteFile(string eTag) {
@@ -458,6 +461,39 @@ public class BoxFile extends BoxItem {
     }
 
     /**
+     * Gets a specific version of this file.
+     *
+     * @param versionId the ID of the version to retrieve
+     * @return information about the specific file version
+     */
+    public BoxFileVersion.Info getVersion(String versionId) {
+        String url =
+            this.api.baseUrl +
+            String.format(
+                FILE_VERSIONS_URL, 
+                new List<String>{ this.getId(), versionId }
+            );
+        BoxApiRequest request = new BoxApiRequest(
+            this.api,
+            url,
+            BoxApiRequest.METHOD_GET
+        );
+
+        request.setTimeout(this.api.timeout);
+        request.addJsonContentTypeHeader();
+
+        HttpResponse response = request.send();
+        String responseBody = BoxApiRequest.getBoxResourceResponseBody(
+            response,
+            'BoxFile.getVersion'
+        );
+
+        BoxFileVersion.Info versionInfo = new BoxFileVersion.Info(responseBody);
+        versionInfo.addValue('file_id', this.getId());
+        return versionInfo;
+    }
+
+    /**
      * Adds a comment to this file. The message can contain @mentions by using the string @[userid:username] anywhere
      * within the message, where userid and username are the ID and username of the person being mentioned.
      * @see    <a href="https://developers.box.com/docs/#comments-add-a-comment-to-an-item">the tagged_message field
@@ -485,6 +521,170 @@ public class BoxFile extends BoxItem {
         }
 
         return BoxComment.addComment(this.api, url, commentInfo);
+    }
+
+    /**
+     * Gets all metadata on this file.
+     *
+     * @return list of metadata instances on the file.
+     */
+    public List<BoxMetadata.Info> getAllMetadata() {
+        String url = this.api.baseUrl + String.format(
+            METADATA_URL,
+            new List<String>{ this.getId() }
+        );
+        BoxApiRequest request = new BoxApiRequest(
+            this.api,
+            url,
+            BoxApiRequest.METHOD_GET
+        );
+        request.setTimeout(this.api.timeout);
+        request.addJsonContentTypeHeader();
+
+        HttpResponse response = request.send();
+        String responseBody = BoxApiRequest.getBoxResourceResponseBody(
+            response,
+            'BoxFile.getAllMetadata'
+        );
+
+        BoxGenericJsonObject responseObject = new BoxGenericJsonObject(responseBody);
+        List<String> entries = BoxJsonObject.parseJsonObjectArray(
+            responseObject.getValue('entries')
+        );
+        List<BoxMetadata.Info> metadataList = new List<BoxMetadata.Info>();
+        for (String entry : entries) {
+            metadataList.add(new BoxMetadata.Info(entry));
+        }
+        return metadataList;
+    }
+
+    /**
+     * Gets the metadata on this file for a specific template.
+     *
+     * @param scope the scope of the metadata template.
+     * @param template the key of the metadata template.
+     * @return the metadata instance.
+     */
+    public BoxMetadata.Info getMetadata(String scope, String template) {
+        String url = this.api.baseUrl + String.format(
+            METADATA_INSTANCE_URL,
+            new List<String>{ this.getId(), scope, template }
+        );
+        BoxApiRequest request = new BoxApiRequest(
+            this.api,
+            url,
+            BoxApiRequest.METHOD_GET
+        );
+        request.setTimeout(this.api.timeout);
+        request.addJsonContentTypeHeader();
+
+        HttpResponse response = request.send();
+        String responseBody = BoxApiRequest.getBoxResourceResponseBody(
+            response,
+            'BoxFile.getMetadata'
+        );
+        return new BoxMetadata.Info(responseBody);
+    }
+
+    /**
+     * Creates metadata on this file.
+     *
+     * @param scope the scope of the metadata template.
+     * @param template the key of the metadata template.
+     * @param metadata the metadata values to create.
+     * @return the created metadata instance.
+     */
+    public BoxMetadata.Info createMetadata(String scope, String template, Map<String, String> metadata) {
+        String url = this.api.baseUrl + String.format(
+            METADATA_INSTANCE_URL,
+            new List<String>{ this.getId(), scope, template }
+        );
+        BoxApiRequest request = new BoxApiRequest(
+            this.api,
+            url,
+            BoxApiRequest.METHOD_POST
+        );
+        
+        BoxGenericJsonObject metadataObject = new BoxGenericJsonObject();
+        for (String key : metadata.keySet()) {
+            metadataObject.addValue(key, metadata.get(key));
+        }
+        
+        request.setBody(metadataObject.getJsonString());
+        request.setTimeout(this.api.timeout);
+        request.addJsonContentTypeHeader();
+
+        HttpResponse response = request.send();
+        String responseBody = BoxApiRequest.getBoxResourceResponseBody(
+            response,
+            'BoxFile.createMetadata'
+        );
+        return new BoxMetadata.Info(responseBody);
+    }
+
+    /**
+     * Updates metadata on this file.
+     *
+     * @param scope the scope of the metadata template.
+     * @param template the key of the metadata template.
+     * @param updates list of metadata update operations.
+     * @return the updated metadata instance.
+     */
+    public BoxMetadata.Info updateMetadata(String scope, String template, List<BoxMetadata.Update> updates) {
+        String url = this.api.baseUrl + String.format(
+            METADATA_INSTANCE_URL,
+            new List<String>{ this.getId(), scope, template }
+        );
+        BoxApiRequest request = new BoxApiRequest(
+            this.api,
+            url,
+            BoxApiRequest.METHOD_PUT
+        );
+        
+        List<Map<String, String>> operations = new List<Map<String, String>>();
+        for (BoxMetadata.Update updateOp : updates) {
+            operations.add(updateOp.toMap());
+        }
+        
+        request.setBody(JSON.serialize(operations));
+        request.setTimeout(this.api.timeout);
+        request.addJsonContentTypeHeader();
+        request.addHeader('Content-Type', 'application/json-patch+json');
+
+        HttpResponse response = request.send();
+        String responseBody = BoxApiRequest.getBoxResourceResponseBody(
+            response,
+            'BoxFile.updateMetadata'
+        );
+        return new BoxMetadata.Info(responseBody);
+    }
+
+    /**
+     * Deletes metadata on this file.
+     *
+     * @param scope the scope of the metadata template.
+     * @param template the key of the metadata template.
+     * @return true if deletion was successful.
+     */
+    public Boolean deleteMetadata(String scope, String template) {
+        String url = this.api.baseUrl + String.format(
+            METADATA_INSTANCE_URL,
+            new List<String>{ this.getId(), scope, template }
+        );
+        BoxApiRequest request = new BoxApiRequest(
+            this.api,
+            url,
+            BoxApiRequest.METHOD_DELETE
+        );
+        request.setTimeout(this.api.timeout);
+        request.addJsonContentTypeHeader();
+
+        HttpResponse response = request.send();
+        return BoxApiRequest.ensureBoxResourceResponseCode(
+            response,
+            'BoxFile.deleteMetadata',
+            new Set<Integer>{ 204 }
+        );
     }
 
     /**

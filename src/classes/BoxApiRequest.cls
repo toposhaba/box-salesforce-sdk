@@ -45,6 +45,11 @@ public class BoxApiRequest {
             this.addHeader('As-User', api.getAsUserId());
         }
 
+        // Add Box API version header if specified
+        if (api != null && api.getApiVersion() != null && api.getApiVersion() != '') {
+            this.addHeader('box-version', api.getApiVersion());
+        }
+
         this.addHeader('Accept-Encoding', 'gzip');
         this.addHeader('Accept-Charset', 'utf-8');
     }

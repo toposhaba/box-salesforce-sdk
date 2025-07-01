@@ -26,6 +26,7 @@ public virtual class BoxApiConnection {
     public String baseUrl { get; set; }
     public String baseUploadUrl { get; set; }
     public String asUserId { get; set; }
+    public String apiVersion { get; set; }
 
     public Boolean autoRefresh { get; set; }
 
@@ -232,6 +233,14 @@ public virtual class BoxApiConnection {
 
     public virtual void setAsUserId(String asUserId) {
         this.asUserId = asUserId;
+    }
+
+    public virtual String getApiVersion() {
+        return this.apiVersion;
+    }
+
+    public virtual void setApiVersion(String apiVersion) {
+        this.apiVersion = apiVersion;
     }
 
     public virtual Boolean getAutoRefresh() {

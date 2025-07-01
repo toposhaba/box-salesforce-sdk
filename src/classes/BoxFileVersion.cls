@@ -45,7 +45,7 @@ public class BoxFileVersion extends BoxResource {
      * Deletes this version of the file.
      *
      * @param  version
-     * @param  eTag the etag of the file can be included as an ‘If-Match’ header.
+     * @param  eTag the etag of the file can be included as an 'If-Match' header.
      * @return      true if version is deleted succesfully, false otherwise.
      */
     public Boolean deleteVersion(String eTag) {
@@ -92,7 +92,7 @@ public class BoxFileVersion extends BoxResource {
     /**
      * Promotes this version of the file to be the latest version.
      *
-     * @param  itemType  must be ‘file_version’ for this request
+     * @param  itemType  must be 'file_version' for this request
      * @param  versionId file version id
      * @return           information about new file version
      */
@@ -127,6 +127,54 @@ public class BoxFileVersion extends BoxResource {
     }
 
     /**
+     * Restores a file version that was deleted to the trash.
+     * 
+     * @return information about the restored file version
+     */
+    public BoxFileVersion.Info restoreVersion() {
+        return this.restoreVersion(null);
+    }
+
+    /**
+     * Restores a file version that was deleted to the trash.
+     * 
+     * @param trashedAt optional timestamp of when the version was trashed
+     * @return information about the restored file version
+     */
+    public BoxFileVersion.Info restoreVersion(String trashedAt) {
+        BoxFileVersion.Info currentInfo = (BoxFileVersion.Info) this.getInfo();
+        String url =
+            this.api.baseUrl +
+            String.format(
+                FILE_VERSIONS_URL,
+                new List<String>{ currentInfo.fileId, this.getId() }
+            );
+        BoxApiRequest request = new BoxApiRequest(
+            this.api,
+            url,
+            BoxApiRequest.METHOD_PUT
+        );
+
+        BoxGenericJsonObject jsonObject = new BoxGenericJsonObject();
+        if (trashedAt != null) {
+            jsonObject.addValue('trashed_at', trashedAt);
+        } else {
+            jsonObject.addValue('trashed_at', null);
+        }
+        request.setBody(jsonObject.getJsonString());
+
+        request.setTimeout(this.api.timeout);
+        request.addJsonContentTypeHeader();
+
+        HttpResponse response = request.send();
+        String responseBody = BoxApiRequest.getBoxResourceResponseBody(
+            response,
+            'BoxFileVersion.restoreVersion'
+        );
+        return new BoxFileVersion.Info(responseBody);
+    }
+
+    /**
      * Information about BoxFileVersion
      */
     public class Info extends BoxResource.Info {
@@ -138,6 +186,12 @@ public class BoxFileVersion extends BoxResource {
         public DateTime createdAt;
         public DateTime modifiedAt;
         public BoxUser.Info modifiedBy;
+        public DateTime trashedAt;
+        public BoxUser.Info trashedBy;
+        public DateTime restoredAt;
+        public BoxUser.Info restoredBy;
+        public DateTime purgedAt;
+        public String uploaderDisplayName;
 
         /**
          * Constructs an empty Info object.
@@ -205,6 +259,18 @@ public class BoxFileVersion extends BoxResource {
                     this.modifiedBy = new BoxUser.Info(value);
                 } else if (key == 'file_id') {
                     this.fileId = value;
+                } else if (key == 'trashed_at') {
+                    this.trashedAt = BoxDateFormat.parseBoxDateTimeString(value);
+                } else if (key == 'trashed_by') {
+                    this.trashedBy = new BoxUser.Info(value);
+                } else if (key == 'restored_at') {
+                    this.restoredAt = BoxDateFormat.parseBoxDateTimeString(value);
+                } else if (key == 'restored_by') {
+                    this.restoredBy = new BoxUser.Info(value);
+                } else if (key == 'purged_at') {
+                    this.purgedAt = BoxDateFormat.parseBoxDateTimeString(value);
+                } else if (key == 'uploader_display_name') {
+                    this.uploaderDisplayName = value;
                 }
             }
         }
