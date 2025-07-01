@@ -180,6 +180,78 @@ BoxAI.StructuredResponse invoice = BoxAIUtils.extractInvoiceData(
 String invoiceNumber = invoice.getStringValue('invoice_number');
 ```
 
+### Phase 5: Box Doc Gen Implementation
+
+#### Box Doc Gen (BoxDocGen.cls)
+Implemented document generation from templates:
+
+#### Core Features:
+- **Template Management** - Create, update, delete, list templates
+- **Document Generation** - Generate documents with data
+- **Field Types** - Text, date, number, boolean, list, image, table
+- **Output Formats** - PDF and DOCX
+- **Advanced Options** - Metadata, tags, custom filenames
+
+#### Example Usage:
+```apex
+// Simple generation
+BoxDocGen template = new BoxDocGen(api, 'template_id');
+BoxFile.Info doc = template.generateDocument(
+    dataMap,
+    destinationFolder,
+    'MyDocument',
+    'pdf'
+);
+
+// Advanced generation with options
+BoxDocGen.DocumentOptions options = new BoxDocGen.DocumentOptions(
+    'template_id',
+    'folder_id'
+)
+.addDataField('customer_name', 'Acme Corp')
+.addDataField('amount', 10000)
+.setFileName('Contract_2024')
+.setFileType('pdf')
+.setTags(new List<String>{ 'contract', 'sales' });
+
+BoxFile.Info doc = template.generateDocument(options);
+```
+
+#### Box Doc Gen Utils (BoxDocGenUtils.cls)
+Helper utilities for document generation:
+
+#### Features:
+- **Simplified Generation** - Helper methods for common scenarios
+- **Salesforce Integration** - Build data from records
+- **Document Types** - Pre-built invoice and contract generators
+- **Template Validation** - Validate required fields
+
+#### Example Usage:
+```apex
+// Generate invoice
+BoxDocGenUtils.InvoiceData invoice = new BoxDocGenUtils.InvoiceData();
+invoice.invoiceNumber = 'INV-001';
+invoice.customerName = 'Acme Corp';
+invoice.addItem('Product A', 10, 99.99);
+
+BoxFile.Info invoiceDoc = BoxDocGenUtils.generateInvoice(
+    api,
+    'template_id',
+    invoice,
+    'folder_id'
+);
+
+// Build from Salesforce record
+Map<String, String> fieldMapping = new Map<String, String>{
+    'company_name' => 'Name',
+    'address' => 'BillingAddress'
+};
+Map<String, Object> data = BoxDocGenUtils.buildDataFromRecord(
+    account,
+    fieldMapping
+);
+```
+
 ## Key Features by Category
 
 ### Versioning & Governance

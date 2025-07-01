@@ -90,6 +90,13 @@ This document outlines the missing API features and capabilities in the Box for 
 - [ ] ✅ AI extract structured (with defined fields)
 - [ ] ✅ AI agent configuration support
 
+### 7. Box Doc Gen ✅ IMPLEMENTED
+- [ ] ✅ Doc gen templates
+- [ ] ✅ Document generation from templates
+- [ ] ✅ Template management (create, update, delete)
+- [ ] ✅ Field types support (text, date, number, boolean, list, image, table)
+- [ ] ✅ PDF and DOCX output formats
+
 ## Implementation Priority
 
 ### Phase 1: Core Versioning Enhancements
