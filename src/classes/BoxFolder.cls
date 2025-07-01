@@ -41,6 +41,8 @@ public class BoxFolder extends BoxItem {
     private static final String GET_COLLABORATIONS_URL = 'folders/{0}/collaborations';
     private static final String UPLOAD_FILE_URL = 'files/content?parent_id={0}';
     private static final String GET_CHILDREN_URL = 'folders/{0}/items';
+    private static final String METADATA_URL = 'folders/{0}/metadata';
+    private static final String METADATA_INSTANCE_URL = 'folders/{0}/metadata/{1}/{2}';
 
     /**
      * Constructs a BoxFolder for a folder with a given ID.
@@ -763,5 +765,169 @@ public class BoxFolder extends BoxItem {
             return 'can_set_share_access';
         }
         return null;
+    }
+
+    /**
+     * Gets all metadata on this folder.
+     *
+     * @return list of metadata instances on the folder.
+     */
+    public List<BoxMetadata.Info> getAllMetadata() {
+        String url = this.api.baseUrl + String.format(
+            METADATA_URL,
+            new List<String>{ this.getId() }
+        );
+        BoxApiRequest request = new BoxApiRequest(
+            this.api,
+            url,
+            BoxApiRequest.METHOD_GET
+        );
+        request.setTimeout(this.api.timeout);
+        request.addJsonContentTypeHeader();
+
+        HttpResponse response = request.send();
+        String responseBody = BoxApiRequest.getBoxResourceResponseBody(
+            response,
+            'BoxFolder.getAllMetadata'
+        );
+
+        BoxGenericJsonObject responseObject = new BoxGenericJsonObject(responseBody);
+        List<String> entries = BoxJsonObject.parseJsonObjectArray(
+            responseObject.getValue('entries')
+        );
+        List<BoxMetadata.Info> metadataList = new List<BoxMetadata.Info>();
+        for (String entry : entries) {
+            metadataList.add(new BoxMetadata.Info(entry));
+        }
+        return metadataList;
+    }
+
+    /**
+     * Gets the metadata on this folder for a specific template.
+     *
+     * @param scope the scope of the metadata template.
+     * @param template the key of the metadata template.
+     * @return the metadata instance.
+     */
+    public BoxMetadata.Info getMetadata(String scope, String template) {
+        String url = this.api.baseUrl + String.format(
+            METADATA_INSTANCE_URL,
+            new List<String>{ this.getId(), scope, template }
+        );
+        BoxApiRequest request = new BoxApiRequest(
+            this.api,
+            url,
+            BoxApiRequest.METHOD_GET
+        );
+        request.setTimeout(this.api.timeout);
+        request.addJsonContentTypeHeader();
+
+        HttpResponse response = request.send();
+        String responseBody = BoxApiRequest.getBoxResourceResponseBody(
+            response,
+            'BoxFolder.getMetadata'
+        );
+        return new BoxMetadata.Info(responseBody);
+    }
+
+    /**
+     * Creates metadata on this folder.
+     *
+     * @param scope the scope of the metadata template.
+     * @param template the key of the metadata template.
+     * @param metadata the metadata values to create.
+     * @return the created metadata instance.
+     */
+    public BoxMetadata.Info createMetadata(String scope, String template, Map<String, String> metadata) {
+        String url = this.api.baseUrl + String.format(
+            METADATA_INSTANCE_URL,
+            new List<String>{ this.getId(), scope, template }
+        );
+        BoxApiRequest request = new BoxApiRequest(
+            this.api,
+            url,
+            BoxApiRequest.METHOD_POST
+        );
+        
+        BoxGenericJsonObject metadataObject = new BoxGenericJsonObject();
+        for (String key : metadata.keySet()) {
+            metadataObject.addValue(key, metadata.get(key));
+        }
+        
+        request.setBody(metadataObject.getJsonString());
+        request.setTimeout(this.api.timeout);
+        request.addJsonContentTypeHeader();
+
+        HttpResponse response = request.send();
+        String responseBody = BoxApiRequest.getBoxResourceResponseBody(
+            response,
+            'BoxFolder.createMetadata'
+        );
+        return new BoxMetadata.Info(responseBody);
+    }
+
+    /**
+     * Updates metadata on this folder.
+     *
+     * @param scope the scope of the metadata template.
+     * @param template the key of the metadata template.
+     * @param updates list of metadata update operations.
+     * @return the updated metadata instance.
+     */
+    public BoxMetadata.Info updateMetadata(String scope, String template, List<BoxMetadata.Update> updates) {
+        String url = this.api.baseUrl + String.format(
+            METADATA_INSTANCE_URL,
+            new List<String>{ this.getId(), scope, template }
+        );
+        BoxApiRequest request = new BoxApiRequest(
+            this.api,
+            url,
+            BoxApiRequest.METHOD_PUT
+        );
+        
+        List<Map<String, String>> operations = new List<Map<String, String>>();
+        for (BoxMetadata.Update updateOp : updates) {
+            operations.add(updateOp.toMap());
+        }
+        
+        request.setBody(JSON.serialize(operations));
+        request.setTimeout(this.api.timeout);
+        request.addJsonContentTypeHeader();
+        request.addHeader('Content-Type', 'application/json-patch+json');
+
+        HttpResponse response = request.send();
+        String responseBody = BoxApiRequest.getBoxResourceResponseBody(
+            response,
+            'BoxFolder.updateMetadata'
+        );
+        return new BoxMetadata.Info(responseBody);
+    }
+
+    /**
+     * Deletes metadata on this folder.
+     *
+     * @param scope the scope of the metadata template.
+     * @param template the key of the metadata template.
+     * @return true if deletion was successful.
+     */
+    public Boolean deleteMetadata(String scope, String template) {
+        String url = this.api.baseUrl + String.format(
+            METADATA_INSTANCE_URL,
+            new List<String>{ this.getId(), scope, template }
+        );
+        BoxApiRequest request = new BoxApiRequest(
+            this.api,
+            url,
+            BoxApiRequest.METHOD_DELETE
+        );
+        request.setTimeout(this.api.timeout);
+        request.addJsonContentTypeHeader();
+
+        HttpResponse response = request.send();
+        return BoxApiRequest.ensureBoxResourceResponseCode(
+            response,
+            'BoxFolder.deleteMetadata',
+            new Set<Integer>{ 204 }
+        );
     }
 }
